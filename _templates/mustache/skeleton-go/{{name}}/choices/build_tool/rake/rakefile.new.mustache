@@ -1,0 +1,64 @@
+RAKE = ENV['RAKE'] ? ENV['RAKE'] : 'rake'
+# Single package rakefile script.
+
+class SharedVars
+  attr_accessor :parent, :pkg, :version
+  
+  def initialize
+    @parent, @pkg, @version = 'new_parent', 'new_pkg', '0.0.0'
+  end
+end
+
+VARS = SharedVars.new
+VARS.parent, VARS.pkg = '{{parent}}{{^parent}}introgo{{/parent}}', '{{project}}{{^project}}introutil{{/project}}'
+VARS.version = '{{version}}{{^version}}0.1.0{{/version}}'
+
+ENV['GOPATH'] = `go env GOPATH`.chomp
+#ENV['PATH'] = #{ENV['PATH']}:#{ENV['GOPATH']}/bin
+
+desc 'Compile target(s): rake build\[opt1,opt2\]'
+task :build, [:opt1] do |t, opts|
+##  sh "PKG_CONFIG_PATH=#{PREFIX}/lib/pkgconfig go build -gcflags '-shared' -ldflags \"-shared -Wl,--enable-new-dtags,-rpath,'$$ORIGIN/'\" -o build/#{VARS.pkg}.a #{opts[:opt1]} #{opts.extras.join(' ')} || true"
+##  sh "ar -d build/#{VARS.pkg}.a __.PKGDEF _go_.o || true"
+#  sh "PKG_CONFIG_PATH=#{PREFIX}/lib/pkgconfig go build -ldflags '-extldflags \"-static\"' #{opts[:opt1]} #{opts.extras.join(' ')} || true"
+#  sh "PKG_CONFIG_PATH=#{PREFIX}/lib/pkgconfig go build -gcflags '-shared' -ldflags \"-shared -Wl,--enable-new-dtags,-rpath,'$$ORIGIN/'\" #{opts[:opt1]} #{opts.extras.join(' ')} || true"
+  `go list .../#{VARS.pkg}`.split().each { |pkgX|
+    sh "PKG_CONFIG_PATH=#{PREFIX}/lib/pkgconfig go build #{opts[:opt1]} #{opts.extras.join(' ')} #{pkgX} || true"
+  }
+end
+
+desc "Default target: #{RAKE} help"
+task :default => [:help]
+
+desc 'Compile test target: rake testCompile\[opt1,opt2\]'
+task :testCompile, [:opt1] do |t, opts|
+  if "1" == "#{DEBUG}"
+    sh "PKG_CONFIG_PATH=#{PREFIX}/lib/pkgconfig go test -c -cover #{opts[:opt1]} #{opts.extras.join(' ')} || true"
+  else
+    sh "PKG_CONFIG_PATH=#{PREFIX}/lib/pkgconfig go test -c #{opts[:opt1]} #{opts.extras.join(' ')} || true"
+  end
+end
+
+{{#executable}}
+DEBUGGER = 'ddd --gdb ' # lldb ; ddd --gdb; gdb
+# valgrind tools: memcheck helgrind cachegrind massif lackey
+VALGRIND = 'valgrind --verbose --tool=memcheck '
+
+desc 'Run main: rake run\[arg1,arg2\]'
+task :run, [:arg1] => "#{ENV['GOPATH']}/bin/#{VARS.pkg}" do |t, args|
+  sh "LD_LIBRARY_PATH=#{ENV['LD_LIBRARY_PATH']}:lib #{t.source} #{args[:arg1]} #{args.extras.join(' ')} || true"
+end
+
+desc 'Debug main: rake debug\[arg1,arg2\]'
+task :debug, [:arg1] => "#{ENV['GOPATH']}/bin/#{VARS.pkg}" do |t, args|
+  sh "LD_LIBRARY_PATH=#{ENV['LD_LIBRARY_PATH']}:lib #{DEBUGGER} #{t.source} #{args[:arg1]} #{args.extras.join(' ')} || true"
+end
+
+desc 'Valgrind main: rake valgrind'
+task :valgrind => "#{ENV['GOPATH']}/bin/#{VARS.pkg}" do |t|
+  sh "LD_LIBRARY_PATH=#{ENV['LD_LIBRARY_PATH']}:lib #{VALGRIND} #{t.source} || true"
+end
+{{/executable}}
+
+require "./rakefile-targets.rb"
+#require "./rakefile-auxffi.rb"

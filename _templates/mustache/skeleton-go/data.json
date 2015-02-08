@@ -1,0 +1,36 @@
+{
+  "groupid": false,
+  "category": false,
+  "parent": "introgo",
+  "parentdescription": "Multi-package project Intro examples for Golang.",
+  "project": "introutil",
+  "description": "Utilites sub-package for Golang Intro examples project.",
+  "version": "0.1.0",
+  "separator": "-",
+  "joiner": "/",
+  "parentregex": "^[a-z][-a-z0-9]+$",
+  "projectregex": "^[a-z][a-z0-9]+$",
+  
+  "repohost": "bitbucket.org",
+  "repoacct": "imcomputer",
+  "date": "2015-02-08",
+  
+  "readmeext": ".rst",
+  "license": "Apache-2.0",
+  "buildtool": "make",
+  "testfrwk": "testing",
+  
+  "ffilib": "none",
+  
+  "skeletondir": "Templates/mustache/skeleton-go",
+  
+  "_choices": {
+    "readmeext": [".rst", ".md", ".adoc"],
+    "license": ["Apache-2.0", "MIT", "BSD-3-Clause", "GPL-3.0+", "ISC", 
+      "Unlicense", "Not open source"],
+    "buildtool": ["make", "rake"],
+    "testfrwk": ["testing"],
+    "executable": [false, "yes"],
+    "ffilib": ["none", "cgo", "swig"]
+  }
+}

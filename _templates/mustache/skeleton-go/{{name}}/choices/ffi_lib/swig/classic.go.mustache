@@ -1,0 +1,23 @@
+package {{project}}{{^project}}introutil{{/project}}
+
+import ( "{{repohost}}{{^repohost}}bitbucket.org{{/repohost}}/{{repoacct}}{{^repoacct}}imcomputer{{/repoacct}}/{{parent}}{{^parent}}introgo{{/parent}}/{{project}}{{^project}}introutil{{/project}}/pkg/classicc" )
+
+// FactI ...
+func FactI(n int) int64 {
+    return classicc.Fact_i(int64(n))
+}
+
+// FactLp ...
+func FactLp(n int) int64 {
+    return classicc.Fact_lp(int64(n))
+}
+
+// ExptI ...
+func ExptI(b float64, n float64) float64 {
+    return float64(classicc.Expt_i(float32(b), float32(n)))
+}
+
+// ExptLp ...
+func ExptLp(b float64, n float64) float64 {
+    return float64(classicc.Expt_lp(float32(b), float32(n)))
+}

@@ -1,0 +1,47 @@
+# Single package Makefile script.
+.SUFFIXES: .s .o .a .go
+help:
+
+parent = {{parent}}{{^parent}}introgo{{/parent}}
+pkg = {{project}}{{^project}}introutil{{/project}}
+version = {{version}}{{^version}}0.1.0{{/version}}
+
+export GOPATH := $(shell go env GOPATH)
+#export PATH := $(PATH):$(GOPATH)/bin
+
+.PHONY: build testCompile{{#executable}} run debug valgrind{{/executable}}
+
+build: ## compile [OPTS=""]
+##	-PKG_CONFIG_PATH=$(PREFIX)/lib/pkgconfig go build -gcflags '-shared' -ldflags "-shared -Wl,--enable-new-dtags,-rpath,'$$ORIGIN/'" -o build/$(pkg).a $(OPTS)
+##	ar -d build/$(pkg).a __.PKGDEF _go_.o
+#	-PKG_CONFIG_PATH=$(PREFIX)/lib/pkgconfig go build -ldflags '-extldflags "-static"' $(OPTS)
+#	-PKG_CONFIG_PATH=$(PREFIX)/lib/pkgconfig go build -gcflags '-shared' -ldflags "-shared -Wl,--enable-new-dtags,-rpath,'$$ORIGIN/'" $(OPTS)
+	-for pkgX in `go list .../$(pkg)` ; do \
+		PKG_CONFIG_PATH=$(PREFIX)/lib/pkgconfig go build $(OPTS) $$pkgX ; \
+	done
+
+testCompile: ## compile test [OPTS=""]
+	-if [ "1" = "$(DEBUG)" ] ; then \
+		PKG_CONFIG_PATH=$(PREFIX)/lib/pkgconfig go test -c -cover $(OPTS) ; \
+	else \
+		PKG_CONFIG_PATH=$(PREFIX)/lib/pkgconfig go test -c $(OPTS) ; \
+	fi
+{{#executable}}
+
+DEBUGGER = ddd --gdb	# lldb ; ddd --gdb ; gdb
+# valgrind tools: memcheck helgrind cachegrind massif lackey
+VALGRIND = valgrind --verbose --tool=memcheck
+
+run: $(GOPATH)/bin/$(pkg) ## run main [ARGS=""]
+#	export [DY]LD_LIBRARY_PATH=. # ([da|ba|z]sh Linux)
+#	setenv [DY]LD_LIBRARY_PATH . # (tcsh FreeBSD)
+#	-LD_LIBRARY_PATH=$(LD_LIBRARY_PATH):lib go run . $(ARGS)
+	-LD_LIBRARY_PATH=$(LD_LIBRARY_PATH):lib $< $(ARGS)
+debug: $(GOPATH)/bin/$(pkg) ## debug main [ARGS=""]
+	-LD_LIBRARY_PATH=$(LD_LIBRARY_PATH):lib $(DEBUGGER) $< $(ARGS)
+valgrind: $(GOPATH)/bin/$(pkg) ## valgrind main
+	-LD_LIBRARY_PATH=$(LD_LIBRARY_PATH):lib $(VALGRIND) $<
+{{/executable}}
+
+-include build/.depend ./Makefile-targets.mk
+#-include ./Makefile-auxffi.mk

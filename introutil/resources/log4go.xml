@@ -1,0 +1,27 @@
+<logging>
+	<filter enabled = "true"><!-- enabled=true to create logger -->
+		<tag>stdout</tag><!-- can be anything -->
+		<type>console</type>
+		<level>INFO</level><!--FINEST|FINE|DEBUG|TRACE|INFO|WARNING|ERROR-->
+	</filter>
+	<filter enabled = "true">
+		<tag>R1</tag>
+		<type>file</type>
+		<level>INFO</level>
+		<property name = "filename">root.log</property>
+		<!-- It ignores unknown format strings (and removes them)
+		   %D - Date (2006/01/02);   %d - Date (01/02/06)
+		   %T - Time (15:04:05 MST); %t - Time (15:04)
+		   %L - Level (FNST, FINE, DEBG, TRAC, WARN, EROR, CRIT)
+		   %S - Source;              %M - Message
+		   Recommended: "[%D %T] [%L] (%S) %M" -->
+		<property name = "format">[%D %T]:[%L] (%S):%M</property>
+	</filter>
+	<filter enabled = "true">
+		<tag>A1</tag>
+		<type>file</type>
+		<level>DEBUG</level>
+		<property name = "filename">prac.log</property>
+		<property name = "format">[%D %T] - [%L] (%S) - %M</property>
+	</filter>
+</logging>
