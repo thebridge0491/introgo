@@ -1,4 +1,5 @@
-syntax: glob
+# Global
+!.gitignore
 
 *~
 
@@ -98,4 +99,3 @@ Package.resolved
 *.xcworkspace
 
 *.test
-intromain

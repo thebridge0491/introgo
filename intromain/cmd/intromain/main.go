@@ -4,29 +4,162 @@ package main
 /* multi-line comment: 
  * ... */
 
-import ( "flag" ; "fmt" ; "os" ; "io/ioutil" ; "regexp" ; "encoding/json"
-	log "github.com/alecthomas/log4go" ; "github.com/unknwon/goconfig"
-	"github.com/go-yaml/yaml"
+import ( "flag" ; "fmt" ; "os" ; "regexp" ; "time" ; "math/rand" ; "reflect"
+	"strings" ; "sort" ; log "github.com/alecthomas/log4go"
+	"github.com/unknwon/goconfig"
+	//"io/ioutil" ; "encoding/json" ; "github.com/go-yaml/yaml"
+	util "bitbucket.org/thebridge0491/introgo/introutil"
+	practice "bitbucket.org/thebridge0491/introgo/intropractice"
 	lib "bitbucket.org/thebridge0491/introgo/intromain"
 )
 
 type OptsRecord struct {
 	name string
+	num    int
+	isExpt2 bool
 }
 
-func runIntromain(name string) () {
-	matchQuit, err := regexp.MatchString("(?i)^quit$", name)
+// User type ...
+type User struct {
+	name   string
+	num    int
+	timeIn int64
+}
+
+type char byte
+
+const PI float64 = 3.14
+
+const (
+	ZERO = iota
+	//ONE
+	NUMZ = 26
+)
+
+func runIntromain(rsrcPath string, opts *OptsRecord) () {
+	t1 := time.Now()
+	timeIn := t1.Unix()
+	
+	// basic datatypes
+	var isDone bool = false
+	var ( numI int = 0 ; arrLen int = ZERO )
+	var numIU uint = 100
+	var seedp int64 = timeIn
+	var ( delayMsecs float64 = 2.5e3 ; timeDiff float64 = 0.0 )
+	var ( numF1 float64 = 100.0 ; numF2 float64 = 1.0e9 )
+	var ch byte = 0
+	
+	rand.Seed(seedp)
+	
+	// pointers
+	var numPtr *int = &numI
+	//var int64Ptr *int64 = new(int64)
+	
+	// strings & arrays/slices
+	var ( greetPath string = rsrcPath + "/greet.txt" ; dateBuf string)
+	//var str1 [64]char
+	//var numArr [4]int = [4]int{9, 011, 0x9, 9} //{bin, oct, hex, dec}
+	numArr := [4]int{9, 011, 0x9, 9} //{bin, oct, hex, dec}
+	var numSlice []int //= numArr[:]
+	
+	// composites
+	user1 := User{name: opts.name}
+	
+	var userPtr *User = &user1
+	var pers *lib.Person
+    
+    (*userPtr).num = rand.Intn(17) + 2
+    userPtr.timeIn = timeIn
+
+	arrLen = len(numArr)
+	
+	for i := 0; arrLen > i; i++ {
+	    numI += numArr[i]
+	}
+	for _, val := range numArr { // idx, val := range numArr
+	    numSlice = append(numSlice, val)
+	}
+	
+	if *numPtr != (len(numSlice) * numSlice[0]) {
+	    panic("not equal: *numPtr == (len(numSlice) * numSlice[0])")
+	}
+	
+	ch = lib.DelayChar(delayMsecs)
+	if 0 == ch { print("DelayChar error\n") }
+	
+	for !isDone {
+	    numF1 += numF2
+	    numIU += uint(numI)
+	    isDone = true
+	}
+	
+	
+	matchQuit, err := regexp.MatchString("(?i)^quit$", opts.name)
 	
 	if nil != err {
         fmt.Fprintf(os.Stderr, "Regexp MatchString error\n")
         os.Exit(1)
     }
-	if matchQuit { fmt.Printf("Good match: %s to %s\n", name, "\"^quit$\"")
-	} else { fmt.Printf("Does not match: %s to %s\n", name, "\"^quit$\"") }
+	if matchQuit { fmt.Printf("Good match: %s to %s\n", opts.name, "\"^quit$\"")
+	} else { fmt.Printf("Does not match: %s to %s\n", opts.name, "\"^quit$\"") }
+	
+    
+	greetBuf, err := lib.Greeting(greetPath, user1.name)
+	if nil != err {
+		fmt.Fprintf(os.Stderr, "%s.\n", err)
+		os.Exit(1)
+	}
+    dateBuf = t1.Format(time.UnixDate)
+	fmt.Printf("%s\n%s!\n", dateBuf, greetBuf)
+    
+    timeDiff = float64(time.Since(t1).Seconds())
+	fmt.Printf("(program %s) Took %.1f seconds.\n", os.Args[0], timeDiff)
+	fmt.Println(strings.Repeat("-", 40))
+	
+	var arrInts = []int{2, 0, 1, 4, 3}
+	var iarrInts = util.IfcArrFromInts(arrInts)
+	
+	if opts.isExpt2 {
+		fmt.Printf("Expt(%.1f, %.1f) = %.1f\n", 2.0, float64(user1.num),
+			practice.ExptLp(2.0, float64(user1.num)))
+		
+		var iarrTmp = practice.CopyOf(iarrInts)
+		practice.ReverseLp(iarrTmp)
+		fmt.Printf("Reverse(%v): %v\n", iarrInts, iarrTmp)
+		
+		fmt.Printf("sort.Sort(sort.IntSlice(%v)): ", arrInts)
+		sort.Sort(sort.IntSlice(arrInts))
+		fmt.Println(arrInts)
+	} else {
+		fmt.Printf("Fact(%d) = %d\n", user1.num, practice.FactLp(user1.num))
+		
+		fmt.Printf("FindIndex(3, %v): %d\n", iarrInts,
+			practice.FindIndexLp(3, iarrInts))
+		
+		fmt.Printf("append(%v, %d): %v\n", arrInts, 50, append(arrInts, 50))
+	}
+	fmt.Println(strings.Repeat("-", 40))
+	
+	pers = lib.NewPerson("I.M. Computer", 32)
+	
+	if reflect.TypeOf(pers) != reflect.TypeOf(&lib.Person{}) {
+		panic("error: Type mismatch")
+	}
+	fmt.Println(pers.ToString())
+	pers.SetAge(33)
+	fmt.Printf("person.SetAge(%d): \n", 33)
+	fmt.Println(pers.ToString())
+	
+	fmt.Println(strings.Repeat("-", 40))
+	
+	
+	time.Sleep(100 * time.Millisecond)
 }
 
 func parseCmdopts(opts *OptsRecord) {
 	flag.StringVar(&opts.name, "u", opts.name, "user name")
+	flag.IntVar(&opts.num, "n", opts.num, "number n")
+	flag.BoolVar(&opts.isExpt2, "2", opts.isExpt2, "expt 2 n")
 	log.Info("parseCmdopts")
     flag.Parse()
 	//fmt.Fprintln(os.Stderr, flag.Args())
@@ -40,6 +173,11 @@ func recoverMain() {
 
 // main - entry point (DocComment)
 func main() {
+	/*defer func() {
+		if r := recover(); nil != r {
+			fmt.Println("Recovered in main ---", r)
+		}
+	}()*/
 	defer recoverMain()
 	var rsrcPath string
 	envRsrcPath, issetEnvRsrcPath := os.LookupEnv("RSRC_PATH")
@@ -55,7 +193,7 @@ func main() {
 		log.LoadConfiguration(rsrcPath + "/log4go.xml")
 	}
 	
-	opts := OptsRecord{name: "World"}
+	opts := OptsRecord{name: "World", num: 0, isExpt2: false}
 	
     parseCmdopts(&opts)
     
@@ -66,12 +204,12 @@ func main() {
     	//os.Exit(1)
     	rowsArr = append(rowsArr, []string{"????\n", "???", "???"})
     } else {
-		rowsArr = append(rowsArr, []string{lib.IniCfgToStr(iniCfg), 
+		rowsArr = append(rowsArr, []string{util.IniCfgToStr(iniCfg), 
 			iniCfg.MustValue("default", "domain"),
 			iniCfg.MustValue("user1", "name")})
 	}
     
-    jsonStr, err := ioutil.ReadFile(rsrcPath + "/prac.json")
+    /*jsonStr, err := ioutil.ReadFile(rsrcPath + "/prac.json")
     if nil != err {
 		fmt.Fprintf(os.Stderr, "ioutil.ReadFile data error: %s\n", err)
     	//os.Exit(1)
@@ -83,9 +221,9 @@ func main() {
 		rowsArr = append(rowsArr, []string{fmt.Sprintf("%s", jsonMap),
 			fmt.Sprintf("%s", jsonMap["domain"]),
 			fmt.Sprintf("%s", jsonMap["user1"].(map[string]interface{})["name"])})
-	}
+	}*/
 	
-	yamlStr, err := ioutil.ReadFile(rsrcPath + "/prac.yaml")
+	/*yamlStr, err := ioutil.ReadFile(rsrcPath + "/prac.yaml")
 	if nil != err {
 		fmt.Fprintf(os.Stderr, "ioutil.ReadFile data error: %s\n", err)
     	//os.Exit(1)
@@ -97,7 +235,7 @@ func main() {
 		rowsArr = append(rowsArr, []string{fmt.Sprintf("%s", yamlMap),
 			fmt.Sprintf("%s", yamlMap["domain"]),
 			fmt.Sprintf("%s", yamlMap["user1"].(map[interface{}]interface{})["name"])})
-	}
+	}*/
 	
     //sectList := iniCfg.GetSectionList()
     //fmt.Printf("%s\n", sectList)
@@ -107,7 +245,7 @@ func main() {
 		fmt.Printf("\nuser1Name: %s\n", row[2])
 	}
     
-    runIntromain(opts.name)
+    runIntromain(rsrcPath, &opts)
     
     log.Debug("exiting main()")
 }

@@ -1,12 +1,12 @@
 // +build ffi
 
-package introutil_test
+package introforeignc_test
 
 import ( "testing" ; "math" ; "github.com/leanovate/gopter"
 	"github.com/leanovate/gopter/prop"
 	"github.com/leanovate/gopter/gen"
-	//"bitbucket.org/thebridge0491/introgo/introutil"
-	lib "bitbucket.org/thebridge0491/introgo/introutil"
+	util "bitbucket.org/thebridge0491/introgo/introutil"
+	lib "bitbucket.org/thebridge0491/introgo/introforeignc"
 )
 
 func TestPropFact(t *testing.T) {
@@ -35,7 +35,7 @@ func TestPropExpt(t *testing.T) {
 		func(b, n float64) bool {
 			var (ans = math.Pow(b, n) ; res = true)
 			for _, f := range []exptFunc{lib.ExptI, lib.ExptLp} {
-				res = res && InEpsilon(epsilon * ans, ans, f(b, n))
+				res = res && util.InEpsilon(epsilon * ans, ans, f(b, n))
 			}
 			return res
 		},

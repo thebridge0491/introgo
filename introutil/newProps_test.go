@@ -3,7 +3,7 @@ package introutil_test
 import ( "testing" ; "sort" ; "github.com/leanovate/gopter"
 	"github.com/leanovate/gopter/prop"
 	"github.com/leanovate/gopter/gen"
-	//"bitbucket.org/thebridge0491/introgo/introutil"
+	lib "bitbucket.org/thebridge0491/introgo/introutil"
 )
 
 func TestPropCommutAdd(t *testing.T) {
@@ -16,7 +16,7 @@ func TestPropCommutAdd(t *testing.T) {
 	))
 	properties.Property("(floats) addition is commutative", prop.ForAll(
 		func(a float64, b float64) bool {
-			return InEpsilon(epsilon * (a + b), a + b, b + a)
+			return lib.InEpsilon(epsilon * (a + b), a + b, b + a)
 		},
 		gen.Float64Range(-150.0, 150.0), gen.Float64Range(-150.0, 150.0),
 	))
@@ -34,7 +34,7 @@ func TestPropAssocAdd(t *testing.T) {
 	))
 	properties.Property("(floats) addition is associative", prop.ForAll(
 		func(a float64, b float64, c float64) bool {
-			return InEpsilon(epsilon * ((a + b) + c), 
+			return lib.InEpsilon(epsilon * ((a + b) + c), 
 				(a + b) + c, a + (b + c))
 		},
 		gen.Float64Range(-150.0, 150.0), gen.Float64Range(-150.0, 150.0), gen.Float64Range(-150.0, 150.0),
@@ -74,7 +74,7 @@ func TestPropReverse(t *testing.T) {
 				newArr[maxIdx - i] = swap
 			}
 			for i, _ := range newArr {
-				res = res && InEpsilon(epsilon * arr[i], arr[i], newArr[i])
+				res = res && lib.InEpsilon(epsilon * arr[i], arr[i], newArr[i])
 			}
 			return res
 		},
@@ -112,7 +112,7 @@ func TestPropSort(t *testing.T) {
 			for i := 0; len(arr) > i; i = i + 1 {
 				if arr[i] < minEl { minEl = arr[i] }
 			}
-			return InEpsilon(epsilon * minEl, minEl, newArr[0])
+			return lib.InEpsilon(epsilon * minEl, minEl, newArr[0])
 		},
 		gen.SliceOf(gen.Float64Range(-150.0, 150.0)),
 	))

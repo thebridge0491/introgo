@@ -1,0 +1,36 @@
+.POSIX:
+.SUFFIXES:
+PREFIX = /home/kenneth/.local
+VPATH = .
+
+# Single package Makefile script.
+.SUFFIXES: .s .o .a .go
+help:
+
+parent = introgo
+pkg = introforeignc
+version = 0.1.0
+
+export GOPATH := $(shell go env GOPATH)
+#export PATH := $(PATH):$(GOPATH)/bin
+
+.PHONY: build testCompile
+
+build: ## compile [OPTS=""]
+##	-PKG_CONFIG_PATH=$(PREFIX)/lib/pkgconfig go build -gcflags '-shared' -ldflags "-shared -Wl,--enable-new-dtags,-rpath,'$$ORIGIN/'" -o build/$(pkg).a $(OPTS)
+##	ar -d build/$(pkg).a __.PKGDEF _go_.o
+#	-PKG_CONFIG_PATH=$(PREFIX)/lib/pkgconfig go build -ldflags '-extldflags "-static"' $(OPTS)
+#	-PKG_CONFIG_PATH=$(PREFIX)/lib/pkgconfig go build -gcflags '-shared' -ldflags "-shared -Wl,--enable-new-dtags,-rpath,'$$ORIGIN/'" $(OPTS)
+	-for pkgX in `go list .../$(pkg)` ; do \
+		PKG_CONFIG_PATH=$(PREFIX)/lib/pkgconfig go build $(OPTS) $$pkgX ; \
+	done
+
+testCompile: ## compile test [OPTS=""]
+	-if [ "1" = "$(DEBUG)" ] ; then \
+		PKG_CONFIG_PATH=$(PREFIX)/lib/pkgconfig go test -c -cover -tags ffi $(OPTS) ; \
+	else \
+		PKG_CONFIG_PATH=$(PREFIX)/lib/pkgconfig go test -c -tags ffi $(OPTS) ; \
+	fi
+
+-include build/.depend ./Makefile-targets.mk
+#-include ./Makefile-auxffi.mk

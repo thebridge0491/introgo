@@ -8,7 +8,7 @@ help:
 export GOPATH := $(shell go env GOPATH)
 
 parent = introgo
-SUBDIRS = introutil intromain
+SUBDIRS = introutil introforeignc intropractice intromain
 
 .PHONY: configure build testCompile help clean test uninstall install
 configure: $(SUBDIRS) ## configure [OPTS=""]

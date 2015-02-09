@@ -1,10 +1,8 @@
-// +build ffi
-
-package intromain_test
+package intropractice_test
 
 import ( "testing" ; "math"
-	//"bitbucket.org/thebridge0491/introgo/introutil"
-	lib "bitbucket.org/thebridge0491/introgo/intromain"
+	util "bitbucket.org/thebridge0491/introgo/introutil"
+	lib "bitbucket.org/thebridge0491/introgo/intropractice"
 )
 
 func TestFact(t *testing.T) {
@@ -22,11 +20,11 @@ func TestExpt(t *testing.T) {
     for i, el := range []float64{2.0, 11.0, 20.0} { param1[i] = el }
     for i, el := range []float64{3.0, 6.0, 10.0} { param2[i] = el }
     
-	for _, row := range CartesianProd(param1, param2) {
+	for _, row := range util.CartesianProd(param1, param2) {
 		var ( b = row[0].(float64) ; n = row[1].(float64) )
 		var ans = math.Pow(b, n)
 		for _, f := range []exptFunc{lib.ExptI, lib.ExptLp} {
-		    if !InEpsilon(epsilon * ans, ans, f(b, n)) {
+		    if !util.InEpsilon(epsilon * ans, ans, f(b, n)) {
 				t.FailNow()
 		    }
         }

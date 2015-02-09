@@ -1,7 +1,7 @@
 package intromain_test
 
 import ( "testing"
-	//"bitbucket.org/thebridge0491/introgo/introutil"
+	util "bitbucket.org/thebridge0491/introgo/introutil"
 )
 
 func TestMethod(t *testing.T) {
@@ -10,7 +10,7 @@ func TestMethod(t *testing.T) {
 
 func TestFloatMethod(t *testing.T) {
     //if 4.0 != 2.0 * 2.0 { t.FailNow() }
-    if !InEpsilon(epsilon * 4.0, 4.0, 2.0 * 2.0) { t.FailNow() }
+    if !util.InEpsilon(epsilon * 4.0, 4.0, 2.0 * 2.0) { t.FailNow() }
 }
 
 func TestStrMethod(t *testing.T) {
