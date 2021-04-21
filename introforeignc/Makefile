@@ -21,7 +21,7 @@ build: ## compile [OPTS=""]
 ##	ar -d build/$(pkg).a __.PKGDEF _go_.o
 #	-PKG_CONFIG_PATH=$(PREFIX)/lib/pkgconfig go build -ldflags '-extldflags "-static"' $(OPTS)
 #	-PKG_CONFIG_PATH=$(PREFIX)/lib/pkgconfig go build -gcflags '-shared' -ldflags "-shared -Wl,--enable-new-dtags,-rpath,'$$ORIGIN/'" $(OPTS)
-	-for pkgX in `go list .../$(pkg)` ; do \
+	-for pkgX in `go list -e .../$(pkg)` ; do \
 		PKG_CONFIG_PATH=$(PREFIX)/lib/pkgconfig go build $(OPTS) $$pkgX ; \
 	done
 

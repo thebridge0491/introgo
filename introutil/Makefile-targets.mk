@@ -30,7 +30,7 @@ test: ./$(pkg).test ## run test [TOPTS=""]
 		LD_LIBRARY_PATH=$(LD_LIBRARY_PATH):lib ./$(pkg).test $(TOPTS) ; \
 	fi
 uninstall install: ## [un]install artifacts [OPTS=""]
-	-for pkgX in `go list .../$(pkg)` ; do \
+	-for pkgX in `go list -e .../$(pkg)` ; do \
 		if [ "uninstall" = "$@" ] ; then \
 			go clean -i $(OPTS) $$pkgX ; \
 		else PKG_CONFIG_PATH=$(PREFIX)/lib/pkgconfig go install $(OPTS) $$pkgX ; fi \
@@ -56,13 +56,13 @@ doc: ## generate documentation [OPTS=""]
 	-rm -f build/doc_$(pkg).txt
 #	#serve docs at http://localhost:6060/$(pkg)
 #	#-go doc -http=:6060
-	-for pkgX in `go list .../$(pkg)` ; do \
+	-for pkgX in `go list -e .../$(pkg)` ; do \
 		go doc -all $(OPTS) $$pkgX >> build/doc_$(pkg).txt ; \
 	done
 lint: ## lint check [OPTS=""]
 #	-go vet $(OPTS)
 	-rm -fr build/lint_$(pkg).txt
-	-for pkgX in `go list .../$(pkg)` ; do \
+	-for pkgX in `go list -e .../$(pkg)` ; do \
 		$(GOPATH)/bin/golint $(OPTS) $$pkgX >> build/lint_$(pkg).txt ; \
 	done
 report: build/cover_$(pkg).out ## report code coverage
