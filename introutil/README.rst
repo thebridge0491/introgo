@@ -3,7 +3,7 @@ Introgo/Introutil
 .. .rst to .html: rst2html5 foo.rst > foo.html
 ..                pandoc -s -f rst -t html5 -o foo.html foo.rst
 
-Utilites sub-package for Golang Intro examples project.
+Utilities sub-package for Golang Intro examples project.
 
 Installation
 ------------

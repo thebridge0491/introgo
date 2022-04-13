@@ -20,7 +20,7 @@ build: ## compile [OPTS=""]
 		PKG_CONFIG_PATH=$(PREFIX)/lib/pkgconfig go build $(OPTS) $$pkgX ; \
 	done
 
-testCompile: ## compile test [OPTS=""]
+testCompile $(pkg).test: ## compile test [OPTS=""]
 	-if [ "1" = "$(DEBUG)" ] ; then \
 		PKG_CONFIG_PATH=$(PREFIX)/lib/pkgconfig go test -c -cover $(OPTS) ; \
 	else \

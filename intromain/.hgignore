@@ -98,4 +98,5 @@ Package.resolved
 *.xcworkspace
 
 *.test
+Makefile
 intromain

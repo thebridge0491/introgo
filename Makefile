@@ -8,6 +8,7 @@ help:
 export GOPATH := $(shell go env GOPATH)
 
 parent = introgo
+version = 0.1.0
 SUBDIRS = introutil introforeignc intropractice intromain
 
 .PHONY: configure build testCompile help clean test uninstall install
@@ -45,21 +46,25 @@ clean: $(SUBDIRS)
 	-rm -fr core* *~ .*~ build/* *.log */*.log
 
 #----------------------------------------
-FMTS ?= tar.gz
-distdir = $(parent)-0.1.0
+FMTS ?= tar.gz,zip
+distdir = $(parent)-$(version)
 
-.PHONY: dist doc lint report run
-dist: $(SUBDIRS)
+build/$(distdir) : 
 	-@mkdir -p build/$(distdir) ; cp -f exclude.lst build/
 #	#-zip -9 -q --exclude @exclude.lst -r - . | unzip -od build/$(distdir) -
 	-tar --format=posix --dereference --exclude-from=exclude.lst -cf - . | tar -xpf - -C build/$(distdir)
-	
+
+.PHONY: dist doc lint report run
+dist | build/$(distdir): $(SUBDIRS)
 	-@for fmt in `echo $(FMTS) | tr ',' ' '` ; do \
 		case $$fmt in \
+			7z) echo "### build/$(distdir).7z ###" ; \
+				rm -f build/$(distdir).7z ; \
+				(cd build ; 7za a -t7z -mx=9 $(distdir).7z $(distdir)) ;; \
 			zip) echo "### build/$(distdir).zip ###" ; \
 				rm -f build/$(distdir).zip ; \
 				(cd build ; zip -9 -q -r $(distdir).zip $(distdir)) ;; \
-			*) tarext=`echo $$fmt | grep -e '^tar$$' -e '^tar.xz$$' -e '^tar.bz2$$' || echo tar.gz` ; \
+			*) tarext=`echo $$fmt | grep -e '^tar$$' -e '^tar.xz$$' -e '^tar.zst$$' -e '^tar.bz2$$' || echo tar.gz` ; \
 				echo "### build/$(distdir).$$tarext ###" ; \
 				rm -f build/$(distdir).$$tarext ; \
 				(cd build ; tar --posix -L -caf $(distdir).$$tarext $(distdir)) ;; \
