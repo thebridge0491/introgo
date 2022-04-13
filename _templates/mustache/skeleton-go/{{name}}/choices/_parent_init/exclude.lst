@@ -38,3 +38,6 @@ dist/*
 javalib/*
 
 *.test
+*/Makefile
+*/build.ninja
+*/Rakefile

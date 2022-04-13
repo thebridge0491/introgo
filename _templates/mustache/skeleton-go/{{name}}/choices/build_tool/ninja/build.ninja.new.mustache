@@ -1,0 +1,68 @@
+# Single package build.ninja script.
+ninja_required_version = 1.5
+
+#rootdir = .
+builddir = build
+
+parent = {{parent}}{{^parent}}introgo{{/parent}}
+pkg = {{project}}{{^project}}introutil{{/project}}
+version = {{version}}{{^version}}0.1.0{{/version}}
+
+GOPATH = $$(go env GOPATH)
+#PATH = $${PATH}:${GOPATH}/bin
+
+# Rule for running custom commands.
+rule custom_cmd
+  description = $DESC
+  command = $COMMAND
+
+include ./build-targets.ninja
+#include ./build-auxffi.ninja
+
+build build: custom_cmd
+  DESC = Compile [OPTS=$${OPTS:-}]
+##	env PKG_CONFIG_PATH=${PREFIX}/lib/pkgconfig go build -gcflags '-shared' -ldflags "-shared -Wl,--enable-new-dtags,-rpath,'$$ORIGIN/'" -o build/${pkg}.a $${OPTS:-}
+##	ar -d build/${pkg}.a __.PKGDEF _go_.o
+#	env PKG_CONFIG_PATH=${PREFIX}/lib/pkgconfig go build -ldflags '-extldflags "-static"' $${OPTS:-}
+#	env PKG_CONFIG_PATH=${PREFIX}/lib/pkgconfig go build -gcflags '-shared' -ldflags "-shared -Wl,--enable-new-dtags,-rpath,'$$ORIGIN/'" $${OPTS:-}
+  COMMAND = $
+    for pkgX in $$(go list .../${pkg}) ; do $
+      env PKG_CONFIG_PATH=${PREFIX}/lib/pkgconfig go build $${OPTS:-} $${pkgX} ; $
+    done
+
+build ${pkg}.test: custom_cmd
+  DESC = Compile test [OPTS=$${OPTS:-}]
+  COMMAND = $
+    if [ "1" = "${DEBUG}" ] ; then $
+      env PKG_CONFIG_PATH=${PREFIX}/lib/pkgconfig go test -c -cover $${OPTS:-} ; $
+    else $
+      env PKG_CONFIG_PATH=${PREFIX}/lib/pkgconfig go test -c $${OPTS:-} ; $
+    fi
+{{#executable}}
+
+# lldb | ddd --gdb | gdb
+debugger = ddd --gdb
+# valgrind tools: memcheck helgrind cachegrind massif lackey
+valgrind = valgrind --verbose --tool=memcheck
+
+build run: custom_cmd || ${GOPATH}/bin/${pkg}
+  DESC = Run main app [ARGS=$${ARGS:-}]
+  COMMAND = env LD_LIBRARY_PATH=$${LD_LIBRARY_PATH}:lib ${GOPATH}/bin/${pkg} $${ARGS:-}
+  pool = console
+  restat = 1
+
+build debug: custom_cmd || ${GOPATH}/bin/${pkg}
+  DESC = Debug main app [ARGS=$${ARGS:-}]
+  COMMAND = env LD_LIBRARY_PATH=$${LD_LIBRARY_PATH}:lib ${debugger} ${GOPATH}/bin/${pkg} $${ARGS:-}
+  pool = console
+
+build valgrind: custom_cmd || ${GOPATH}/bin/${pkg}
+  DESC = Valgrind main app [ARGS=$${ARGS:-}]
+  COMMAND = env LD_LIBRARY_PATH=$${LD_LIBRARY_PATH}:lib ${valgrind} ${GOPATH}/bin/${pkg}
+  pool = console
+{{/executable}}
+
+build all: phony build
+build testcompile: phony ${pkg}.test
+
+default help

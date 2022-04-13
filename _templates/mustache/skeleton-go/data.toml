@@ -1,0 +1,33 @@
+parentregex = "^[a-z][-a-z0-9]+$"
+projectregex = "^[a-z][a-z0-9]+$"
+separator = "-"
+joiner = "/"
+groupid = false
+category = false
+parent = "introgo"
+parentdescription = "Multi-package project Intro examples for Golang."
+project = "introutil"
+description = "Utilities sub-package for Golang Intro examples project."
+version = "0.1.0"
+
+repohost = "bitbucket.org"
+repoacct = "imcomputer"
+date = "2013-10-01"
+
+readmeext = ".rst"
+license = "Apache-2.0"
+buildtool = "make"
+testfrwk = "testing"
+
+ffilib = "none"
+
+skeletondir = "Templates/mustache/skeleton-go"
+
+[_choices]
+readmeext = [".rst", ".md", ".adoc"]
+license = ["Apache-2.0", "MIT", "BSD-3-Clause", "GPL-3.0+", "ISC", "Unlicense",
+  "Not open source"]
+buildtool = ["make", "ninja", "rake"]
+testfrwk = ["testing"]
+executable = ["no", "yes"]
+ffilib = ["none", "cgo", "swig"]

@@ -37,39 +37,41 @@ def project = '{{project}}{{^project}}introutil{{/project}}'
 	cmd -> run_cmd(cmd, dirX) }
 
 run_cmd("cp -v build/choices/readme/README${choices['readmeext']} README${choices['readmeext']}", dirX)
-run_cmd("cp -v build/choices/_parent_readme/README${choices['readmeext']} build/choices/_parent_init/README${choices['readmeext']}", dirX)
+if (Files.exists(Paths.get("build/choices/_parent_readme"))) {
+	run_cmd("cp -v build/choices/_parent_readme/README${choices['readmeext']} build/choices/_parent_init/README${choices['readmeext']}", dirX)
+}
 
 if (choices['license'] in ['Apache-2.0', 'MIT', 'BSD-3-Clause', 'GPL-3.0+', 'ISC', 
 		'Unlicense']) {
 	run_cmd("cp -v build/choices/license/LICENSE_${choices['license']} LICENSE", dirX)
 }
 
-if (choices['buildtool'] in ['make', 'rake']) {
+if (Files.exists(Paths.get("${dirX}/build/choices/build_tool")) && (choices['buildtool'] in ['make', 'ninja', 'rake'])) {
 	def files = glob_files("${dirX}/build/choices/build_tool/${choices['buildtool']}")
 	run_cmd("cp -vR ${files.join(' ')} .", dirX)
-} else { // default: make
+} else if (Files.exists(Paths.get("${dirX}/build/choices/build_tool"))) { // default: make
 	def files = glob_files("${dirX}/build/choices/build_tool/make")
 	run_cmd("cp -vR ${files.join(' ')} .", dirX)
 }
 
-if (choices['testfrwk'] in ['testing']) {
+if (Files.exists(Paths.get("${dirX}/build/choices/testfrwk")) && (choices['testfrwk'] in ['testing'])) {
 	def files = glob_files("${dirX}/build/choices/testfrwk/${choices['testfrwk']}")
 	run_cmd("cp -vR ${files.join(' ')} .", dirX)
-} else { // default: testing
+} else if (Files.exists(Paths.get("${dirX}/build/choices/testfrwk"))) { // default: testing
 	def files = glob_files("${dirX}/build/choices/testfrwk/testing")
 	run_cmd("cp -vR ${files.join(' ')} .", dirX)
 }
 
-if ('yes' != choices['executable']) {
+if (Files.exists(Paths.get("cmd/${project}")) && ('yes' != choices['executable'])) {
     run_cmd("rm -vf cmd/${project}/main.go", dirX)
 }
 
-if (choices['ffilib'] in ['cgo', 'swig']) {
+if (Files.exists(Paths.get("${dirX}/build/choices/ffi_lib")) && (choices['ffilib'] in ['cgo', 'swig'])) {
 	def files = glob_files("${dirX}/build/choices/ffi_lib/${choices['ffilib']}")
 	run_cmd("cp -vR ${files.join(' ')} .", dirX)
 }
 
-if (Files.exists(Paths.get("../_templates")) || Files.exists(Paths.get("_templates"))) {
+if (Files.exists(Paths.get("_templates")) && Files.isDirectory(Paths.get("_templates"))) {
 	def skeletondir = '{{skeletondir}}{{^skeletondir}}${System.env["HOME"]}/Templates/mustache/skeleton-go{{/skeletondir}}'
 	def skelParDir = (new File(skeletondir)).parent
 	def scripts = glob_files("${skelParDir}").findAll{f -> 

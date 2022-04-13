@@ -30,12 +30,12 @@ for opt in "$@" ; do
 	esac
 done
 
-echo "configuring Rakefile ..."
-cat << EOF > rakefile
-PREFIX = ENV['prefix'] ? ENV['prefix'] : '$prefix'
-DEBUG = ENV['DEBUG'] ? ENV['DEBUG'] : '$debug'
+echo "configuring build.ninja ..."
+cat << EOF > build.ninja
+PREFIX = $prefix
+DEBUG = $debug
 
 EOF
-cat ./Rakefile.new >> Rakefile
+cat ./build.ninja.new >> build.ninja
 
 echo "Finished configuring, for help: make help"

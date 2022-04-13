@@ -1,0 +1,15 @@
+# FFI auxiliary ninja script.
+
+ffi_libdir = $$(${PKG_CONFIG} --variable=libdir intro_c-practice || echo .)
+ffi_incdir = $$(${PKG_CONFIG} --variable=includedir intro_c-practice || echo .)
+LD_LIBRARY_PATH = $${LD_LIBRARY_PATH}:${ffi_libdir}
+
+CGO_CFLAGS = $${CGO_CFLAGS} $$(PKG_CONFIG_PATH=${PREFIX}/lib/pkgconfig pkg-config --cflags intro_c-practice)
+CGO_LDFLAGS = $${CGO_LDFLAGS} $$(PKG_CONFIG_PATH=${PREFIX}/lib/pkgconfig pkg-config --libs intro_c-practice)
+
+build prep_swig: custom_cmd || classicc.i
+  DESC = Prepare Swig files
+  COMMAND = $
+    swig -go -cgo -intgosize 32 -package classicc -v -I${ffi_incdir} -outdir pkg/classicc -o pkg/classicc/classicc_wrap.c classicc.i
+  pool = console
+  restat = 1

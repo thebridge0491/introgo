@@ -1,0 +1,101 @@
+# Targets ninja script.
+
+build help: custom_cmd
+  DESC = Targets available -- ninja -t targets [OPTS=$${OPTS:-}]
+  COMMAND = ninja -t targets $${OPTS:-}
+
+build clean: custom_cmd
+  DESC = Clean build artifacts -- ninja -t clean [OPTS=$${OPTS:-}]
+  COMMAND = ninja -t clean $${OPTS:-}
+
+build test: custom_cmd || ${pkg}.test
+  DESC = Run test [TOPTS=$${TOPTS:-}]
+  COMMAND = $
+    if [ "1" = "${DEBUG}" ] ; then $
+      env LD_LIBRARY_PATH=$${LD_LIBRARY_PATH}:lib ./${pkg}.test -test.coverprofile=build/cover_${pkg}.out $${TOPTS:-} ; $
+    else $
+      env LD_LIBRARY_PATH=$${LD_LIBRARY_PATH}:lib ./${pkg}.test $${TOPTS:-} ; $
+    fi
+  pool = console
+  restat = 1
+
+build uninstall: custom_cmd
+  DESC = Uninstall artifacts [OPTS=$${OPTS:-}]
+  COMMAND = $
+    for pkgX in $$(go list .../${pkg}) ; do $
+      go clean -i $${OPTS:-} $${pkgX} ; $
+      go list -e $${pkgX} ; $
+    done
+  pool = console
+  restat = 1
+
+build install: custom_cmd
+  DESC = Install artifacts [OPTS=$${OPTS:-}]
+  COMMAND = $
+    for pkgX in $$(go list .../${pkg}) ; do $
+      env PKG_CONFIG_PATH=${PREFIX}/lib/pkgconfig go install $${OPTS:-} $${pkgX} ; $
+      go list -e $${pkgX} ; $
+    done
+  pool = console
+  restat = 1
+
+distdir = ${parent}-${pkg}-${version}
+
+build build/${distdir}: custom_cmd
+  DESC = Set up archive files
+  COMMAND = $
+    mkdir -p build/${distdir} ; cp -f ./exclude.lst build/ ; $
+    tar --format=posix --dereference --exclude-from=exclude.lst -cf - . | tar -xpf - -C build/${distdir}
+
+build package: custom_cmd || build/${distdir}
+  DESC = Archive source code [FMTS=$${FMTS:-tar.gz,zip}]
+  COMMAND = $
+    for fmt in $$(echo $${FMTS:-tar.gz,zip} | tr ',' ' ') ; do $
+      case $$fmt in $
+        7z) echo "### build/${distdir}.7z ###" ; $
+          rm -f build/${distdir}.7z ; $
+          $$(cd build ; 7za a -t7z -mx=9 ${distdir}.7z ${distdir}) ;; $
+        zip) echo "### build/${distdir}.zip ###" ; $
+          rm -f build/${distdir}.zip ; $
+          $$(cd build ; zip -9 -q -r ${distdir}.zip ${distdir}) ;; $
+        *) tarext=$$(echo $$fmt | grep -e '^tar$$' -e '^tar.xz$$' -e '^tar.zst$$' -e '^tar.bz2$$' || echo tar.gz) ; $
+          echo "### build/${distdir}.$$tarext ###" ; $
+          rm -f build/${distdir}.$$tarext ; $
+          $$(cd build ; tar --posix -h -caf ${distdir}.$$tarext ${distdir}) ;; $
+      esac ; $
+    done ; $
+    rm -r build/${distdir}
+  pool = console
+  restat = 1
+
+build doc: custom_cmd
+  DESC = Generate documentation [OPTS=$${OPTS:-}]
+#	#serve docs at http://localhost:6060/${pkg}
+#	#go doc -http=:6060
+  COMMAND = $
+    rm -f build/doc_${pkg}.txt ; $
+    for pkgX in $$(go list .../${pkg}) ; do $
+      go doc -all $${OPTS:-} $${pkgX} >> build/doc_${pkg}.txt ; $
+    done
+  pool = console
+  restat = 1
+
+build lint: custom_cmd
+  DESC = Lint check [OPTS=$${OPTS:-}]
+#	#serve docs at http://localhost:6060/${pkg}
+#	#go vet $${OPTS:-}
+  COMMAND = $
+    rm -f build/lint_${pkg}.txt ; $
+    for pkgX in $$(go list .../${pkg}) ; do $
+      ${GOPATH}/bin/golint $${OPTS:-} $${pkgX} >> build/lint_${pkg}.txt ; $
+    done
+  pool = console
+  restat = 1
+
+build report: custom_cmd || build/cover_${pkg}.out
+  DESC = Report code coverage
+  COMMAND = $
+    go tool cover -html=build/cover_${pkg}.out -o build/cover_${pkg}.html ; $
+    go tool cover -func=build/cover_${pkg}.out
+  pool = console
+  restat = 1

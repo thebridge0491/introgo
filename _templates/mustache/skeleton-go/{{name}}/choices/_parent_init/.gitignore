@@ -99,3 +99,6 @@ Package.resolved
 *.xcworkspace
 
 *.test
+*/Makefile
+*/build.ninja
+*/Rakefile

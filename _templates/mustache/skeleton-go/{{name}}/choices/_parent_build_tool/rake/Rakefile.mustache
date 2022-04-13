@@ -32,7 +32,7 @@ end
 #sh "export PATH = #{ENV['PATH']}:`go env GOPATH`/bin"
 sh "export GOPATH = `go env GOPATH`"
 
-parent, version = '{{parent}}{{^parent}}introgo{{/parent}}', '0.1.0'
+parent, version = '{{parent}}{{^parent}}introgo{{/parent}}', '{{version}}{{^version}}0.1.0{{/version}}'
 SUBDIRS = ENV['SUBDIRS'] ? ENV['SUBDIRS'].split() : 'introutil intromain'.split()
 
 desc 'configure \[opt1,opt2\]'
@@ -62,41 +62,20 @@ end
 task :clean => [:subclean]
 task :clobber => [:subclobber]
 
-desc 'Compile target(s): rake build\[opt1,opt2\]'
-task :build, [:opt1] do |task_name, opts|
-  SUBDIRS.each { |dirX| cd(dirX) { sh "go build #{opts[:opt1]} #{opts.extras.join(' ')} .../#{dirX}" } }
-end
-
-desc 'Uninstall product(s): rake uninstall\[opt1,opt2\]'
-task :uninstall, [:opt1] do |task_name, opts|
-  SUBDIRS.each { |dirX| cd(dirX) { sh "go clean -i #{opts[:opt1]} #{opts.extras.join(' ')} .../#{dirX}" } }
-end
-
-desc 'Install product(s): rake install\[opt1,opt2\]'
-task :install, [:opt1] do |task_name, opts|
-  SUBDIRS.each { |dirX| cd(dirX) { sh "go install #{opts[:opt1]} #{opts.extras.join(' ')} .../#{dirX}" } }
-end
-
-desc 'Compile test target(s): rake testCompile\[opt1,opt2\]'
-task :testCompile, [:opt1] do |task_name, opts|
-  SUBDIRS.each { |dirX|
-  if "1" == "#{DEBUG}"
-    cd(dirX) { sh "go test -c -cover #{opts[:opt1]} #{opts.extras.join(' ')} .../#{dirX}" }
-  else
-    cd(dirX) { sh "go test -c #{opts[:opt1]} #{opts.extras.join(' ')} .../#{dirX}" }
+[['build', 'Compile target(s): rake build\[opt1,opt2\]'],
+  ['testCompile', 'Compile test target(s): rake testCompile\[opt1,opt2\]'],
+  ['uninstall', 'Uninstall product(s): rake uninstall\[opt1,opt2\]'],
+  ['install', 'Install product(s): rake install\[opt1,opt2\]']
+].each do |name_txt, desc_txt|
+  desc desc_txt
+  task :"#{name_txt}", [:opt1] do |task_name, opts|
+    SUBDIRS.each { |dirX| cd(dirX) { sh "#{RAKE} #{task_name}\\[#{opts[:opt1]},#{opts.extras.join(',')}\\]" } }
   end
-  }
 end
 
 desc 'Run test(s): rake test\[topt1,topt2\]'
 task :test, [:topt1] do |task_name, topts|
-  SUBDIRS.each { |dirX|
-  if "1" == "#{DEBUG}"
-    cd(dirX) { sh "./#{dirX}.test -test.coverprofile=build/cover_#{dirX}.out #{topts[:topt1]} #{topts.extras.join(' ')}" }
-  else
-    cd(dirX) { sh "./#{dirX}.test #{topts[:topt1]} #{topts.extras.join(' ')}" }
-  end
-  }
+  SUBDIRS.each { |dirX| cd(dirX) { sh "#{RAKE} #{task_name}\\[#{topts[:topt1]},#{topts.extras.join(',')}\\]" } }
 end
 
 #----------------------------------------
@@ -108,17 +87,18 @@ end
 
 if defined? Rake::PackageTask
   Rake::PackageTask.new(parent, version) do |p|
-    # task("build/#{parent}-#{version}").invoke
+    task("build/#{parent}-#{version}").invoke
+    cp_r("build/#{parent}-#{version}", 'build/pkg/', :remove_destination => true) || true
     
-    ENV.fetch('FMTS', 'tar.gz').split(',').each{|fmt|
+    ENV.fetch('FMTS', 'tar.gz,zip').split(',').each{|fmt|
       if p.respond_to? "need_#{fmt.tr('.', '_')}="
         p.send("need_#{fmt.tr('.', '_')}=", true)
       else
         p.need_tar_gz = true
       end
     }
-    task(:package).add_description "[FMTS=#{ENV.fetch('FMTS', 'tar.gz')}]"
-    task(:repackage).add_description "[FMTS=#{ENV.fetch('FMTS', 'tar.gz')}]"
+    task(:package).add_description "[FMTS=#{ENV.fetch('FMTS', 'tar.gz,zip')}]"
+    task(:repackage).add_description "[FMTS=#{ENV.fetch('FMTS', 'tar.gz,zip')}]"
   end
   
   task :subpackage do
@@ -130,20 +110,23 @@ if defined? Rake::PackageTask
   task :package => :subpackage
   task :repackage => :subrepackage
 else
-  desc "[FMTS=#{ENV.fetch('FMTS', 'tar.gz')}] Package project distribution"
-  task :dist => ["build/#{parent}-#{version}"] do |t|
+  desc "[FMTS=#{ENV.fetch('FMTS', 'tar.gz,zip')}] Package project distribution"
+  task :package => ["build/#{parent}-#{version}"] do |t|
     distdir = "#{parent}-#{version}"
     
-    ENV.fetch('FMTS', 'tar.gz').split(',').each{|fmt|
+    ENV.fetch('FMTS', 'tar.gz,zip').split(',').each{|fmt|
       case fmt
+      when '7z'
+        rm_rf("build/#{distdir}.7z") || true
+        cd('build') {sh "7za a -t7z -mx=9 #{distdir}.7z #{distdir}" || true}
       when 'zip'
         rm_rf("build/#{distdir}.zip") || true
         cd('build') {sh "zip -9 -q -r #{distdir}.zip #{distdir}" || true}
       else
-        #tarext = `echo #{fmt} | grep -e '^tar$' -e '^tar.xz$' -e '^tar.bz2$' || echo tar.gz`.chomp
-        tarext = fmt.match(%r{(^tar$|^tar.xz$|^tar.bz2$)}) ? fmt : 'tar.gz'
+        #tarext = `echo #{fmt} | grep -e '^tar$' -e '^tar.xz$' -e '^tar.zst$' -e '^tar.bz2$' || echo tar.gz`.chomp
+        tarext = fmt.match(%r{(^tar$|^tar.xz$|^tar.zst$|^tar.bz2$)}) ? fmt : 'tar.gz'
         rm_rf("build/#{distdir}.#{tarext}") || true
-        cd('build') {sh "tar --posix -L -caf #{distdir}.#{tarext} #{distdir}" || true}
+        cd('build') {sh "tar --posix -h -caf #{distdir}.#{tarext} #{distdir}" || true}
       end
     }
     rm_rf("build/#{distdir}") || true
@@ -151,37 +134,23 @@ else
   end
 end
 
-desc 'Generate API documentation(s): rake doc\[opt1,opt2\]'
-task :doc, [:opt1] do |task_name, opts|
-  SUBDIRS.each { |dirX|
-    cd(dirX) {
-      rm_f("build/doc_#{dirX}.txt")
-      sh "go doc -all #{opts[:opt1]} #{opts.extras.join(' ')} #{dirX} >> build/doc_#{dirX}.txt" }
-  }
+[['doc', 'Generate API documentation(s): rake doc\[opt1,opt2\]'],
+  ['lint', 'Lint check(s): rake lint\[opt1,opt2\]'],
+  ['report', 'Report code coverage(s)']
+].each do |name_txt, desc_txt|
+  desc desc_txt
+  task :"#{name_txt}", [:opt1] do |task_name, opts|
+    SUBDIRS.each { |dirX| cd(dirX) { sh "#{RAKE} #{task_name}\\[#{opts[:opt1]},#{opts.extras.join(',')}\\]" } }
+  end
 end
 
-desc 'Lint check(s): rake lint\[opt1,opt2\]'
-task :lint, [:opt1] do |task_name, opts|
-  SUBDIRS.each { |dirX|
-    cd(dirX) {
-      rm_f("build/lint_#{dirX}.txt")
-      sh "#{ENV['GOPATH']}/bin/golint #{opts[:opt1]} #{opts.extras.join(' ')} .../#{dirX} >> build/lint_#{dirX}.txt" }
-  }
-end
-
-desc 'Report code coverage(s)'
-task :report do |task_name|
-  SUBDIRS.each { |dirX|
-    cd(dirX) {
-      sh "go tool cover -html=build/cover_#{dirX}.out -o build/cover_#{dirX}.html ; go tool cover -func=build/cover_#{dirX}.out" }
-  }
-end
-
-desc 'Run main: rake run\[arg1,arg2\]'
-task :run, [:arg1] do |task_name, args|
-  SUBDIRS.each { |dirX| 
-    if File.exist?("#{ENV['GOPATH']}/bin/#{dirX}")
-      cd(dirX) { sh "#{ENV['GOPATH']}/bin/#{dirX} #{args[:arg1]} #{args.extras.join(' ')}" }
-    end
-  }
+[['run', 'Run main: rake run\[arg1,arg2\]'],
+  ['debug', 'Debug main : rake debug\[arg1,arg2\]'],
+  ['valgrind', 'Valgrind main : rake valgrind\[arg1,arg2\]']
+].each do |name_txt, desc_txt|
+  desc desc_txt
+  task :"#{name_txt}", [:arg1] do |t, args|
+    cd('app') { 
+      sh "#{RAKE} #{task_name}\\[#{args[:arg1]},#{args.extras.join(',')}\\]" }
+  end
 end

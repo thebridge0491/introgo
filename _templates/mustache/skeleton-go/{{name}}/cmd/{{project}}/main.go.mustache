@@ -4,14 +4,32 @@ package main
 /* multi-line comment: 
  * ... */
 
-import ( "flag" ; "fmt" ; "os" ; "io/ioutil" ; "regexp" ; "encoding/json"
+import ( "flag" ; "fmt" ; "os" ; "regexp" ; "io/ioutil" ; "encoding/json"
 	log "github.com/alecthomas/log4go" ; "github.com/unknwon/goconfig"
-	"github.com/go-yaml/yaml"
+	"github.com/BurntSushi/toml" ; "github.com/go-yaml/yaml"
 	lib "{{repohost}}{{^repohost}}bitbucket.org{{/repohost}}/{{repoacct}}{{^repoacct}}imcomputer{{/repoacct}}/{{parent}}{{^parent}}introgo{{/parent}}/{{project}}{{^project}}introutil{{/project}}"
 )
 
 type OptsRecord struct {
 	name string
+}
+
+func deserializeStr(dataBytes []byte, dataFmt string, err error, errPfx string) map[string]interface{} {
+	blankMap := make(map[string]interface{})
+	blankMap["fmt"] = dataFmt
+	if nil != err {
+		fmt.Fprintf(os.Stderr, "%s: %s\n", errPfx, err)
+    	//os.Exit(1)
+		return blankMap
+	}
+	if "yaml" == dataFmt || "json" == dataFmt {
+		yaml.Unmarshal([]byte(dataBytes), &blankMap)
+	} else if "toml" == dataFmt {
+		toml.Unmarshal([]byte(dataBytes), &blankMap)
+	} //else if "json" == dataFmt {
+	//	json.Unmarshal([]byte(dataBytes), &blankMap)
+	//}
+	return blankMap
 }
 
 func run{{projectcap}}{{^projectcap}}Introutil{{/projectcap}}(name string) () {
@@ -71,29 +89,37 @@ func main() {
 			iniCfg.MustValue("user1", "name")})
 	}
     
-    jsonStr, err := ioutil.ReadFile(rsrcPath + "/prac.json")
-    if nil != err {
-		fmt.Fprintf(os.Stderr, "ioutil.ReadFile data error: %s\n", err)
-    	//os.Exit(1)
+    
+    jsonStr, jsonErr := ioutil.ReadFile(rsrcPath + "/prac.json")
+	tomlStr, tomlErr := ioutil.ReadFile(rsrcPath + "/prac.toml")
+	yamlStr, yamlErr := ioutil.ReadFile(rsrcPath + "/prac.yaml")
+	
+	var jsonMap = deserializeStr(jsonStr, "json", jsonErr,
+		"ioutil.ReadFile data error")
+	var tomlMap = deserializeStr(tomlStr, "toml", tomlErr,
+		"ioutil.ReadFile data error")
+	var yamlMap = deserializeStr(yamlStr, "yaml", yamlErr,
+		"ioutil.ReadFile data error")
+    
+    if nil != jsonErr {
     	rowsArr = append(rowsArr, []string{"????\n", "???", "???"})
-	}
-	var jsonMap map[string]interface{}
-	json.Unmarshal([]byte(jsonStr), &jsonMap)
-	if nil != jsonMap["user1"] {
+	} else if nil != jsonMap["user1"] {
 		rowsArr = append(rowsArr, []string{fmt.Sprintf("%s", jsonMap),
 			fmt.Sprintf("%s", jsonMap["domain"]),
-			fmt.Sprintf("%s", jsonMap["user1"].(map[string]interface{})["name"])})
+			//fmt.Sprintf("%s", jsonMap["user1"].(map[string]interface{})["name"]),
+			fmt.Sprintf("%s", jsonMap["user1"].(map[interface{}]interface{})["name"]),
+			})
 	}
-	
-	yamlStr, err := ioutil.ReadFile(rsrcPath + "/prac.yaml")
-	if nil != err {
-		fmt.Fprintf(os.Stderr, "ioutil.ReadFile data error: %s\n", err)
-    	//os.Exit(1)
+	if nil != tomlErr {
     	rowsArr = append(rowsArr, []string{"????\n", "???", "???"})
+	} else if nil != tomlMap["user1"] {
+		rowsArr = append(rowsArr, []string{fmt.Sprintf("%s", tomlMap),
+			fmt.Sprintf("%s", tomlMap["domain"]),
+			fmt.Sprintf("%s", tomlMap["user1"].(map[string]interface{})["name"])})
 	}
-	var yamlMap map[string]interface{}
-	yaml.Unmarshal([]byte(yamlStr), &yamlMap)
-	if nil != yamlMap["user1"] {
+	if nil != yamlErr {
+    	rowsArr = append(rowsArr, []string{"????\n", "???", "???"})
+	} else if nil != yamlMap["user1"] {
 		rowsArr = append(rowsArr, []string{fmt.Sprintf("%s", yamlMap),
 			fmt.Sprintf("%s", yamlMap["domain"]),
 			fmt.Sprintf("%s", yamlMap["user1"].(map[interface{}]interface{})["name"])})

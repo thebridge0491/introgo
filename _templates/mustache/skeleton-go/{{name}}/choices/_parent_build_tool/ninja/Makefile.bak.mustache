@@ -4,27 +4,21 @@ help:
 
 #MAKE = make # (GNU make variants: make (Linux) gmake (FreeBSD)
 
-#export PATH := $(PATH):$(shell go env GOPATH)/bin
-export GOPATH := $(shell go env GOPATH)
-
 parent = {{parent}}{{^parent}}introgo{{/parent}}
 version = {{version}}{{^version}}0.1.0{{/version}}
 SUBDIRS = introutil intromain
 
-.PHONY: configure build testCompile help clean test uninstall install
+.PHONY: configure build help clean test testCompile uninstall install
 configure: $(SUBDIRS) ## configure [OPTS=""]
-	-for dirX in $^ ; do (cd $$dirX ; sh ./configure.sh $(OPTS)) ; done
+	-for dirX in $^ ; (cd $$dirX ; sh ./configure.sh $(OPTS)) ; done
 help: $(SUBDIRS)
-	-for dirX in $^ ; do $(MAKE) -C $$dirX $@ ; done
+	-for dirX in $^ ; do ninja -C $$dirX $@ ; done
 	@echo "##### Top-level multiproject: $(parent) #####"
-	@echo "       $(MAKE) [SUBDIRS="$(SUBDIRS)"] configure [OPTS=??]"
 	@echo "Usage: $(MAKE) [SUBDIRS="$(SUBDIRS)"] [target]"
-build testCompile uninstall install: $(SUBDIRS)
-	-for dirX in $^ ; do $(MAKE) -C $$dirX OPTS="$(OPTS)" $@ ; done
-test: $(SUBDIRS)
-	-for dirX in $^ ; do $(MAKE) -C $$dirX TOPTS="$(TOPTS)" $@ ; done
+all test testCompile uninstall install: $(SUBDIRS)
+	-for dirX in $^ ; do ninja -C $$dirX $@ ; done
 clean: $(SUBDIRS)
-	-for dirX in $^ ; do $(MAKE) -C $$dirX $@ ; done
+	-for dirX in $^ ; do ninja -C $$dirX $@ ; done
 	-rm -fr core* *~ .*~ build/* *.log */*.log
 
 #----------------------------------------
@@ -36,8 +30,8 @@ build/$(distdir) :
 #	#-zip -9 -q --exclude @exclude.lst -r - . | unzip -od build/$(distdir) -
 	-tar --format=posix --dereference --exclude-from=exclude.lst -cf - . | tar -xpf - -C build/$(distdir)
 
-.PHONY: dist doc lint report run debug valgrind
-dist | build/$(distdir): $(SUBDIRS)
+.PHONY: package doc lint report run debug valgrind
+package: $(SUBDIRS) | build/$(distdir)
 	-@for fmt in `echo $(FMTS) | tr ',' ' '` ; do \
 		case $$fmt in \
 			7z) echo "### build/$(distdir).7z ###" ; \
@@ -53,8 +47,8 @@ dist | build/$(distdir): $(SUBDIRS)
 		esac \
 	done
 	-@rm -r build/$(distdir)
-	-for dirX in $^ ; do $(MAKE) -C $$dirX FMTS="$(FMTS)" $@ ; done
+	-for dirX in $^ ; do ninja -C $$dirX $@ ; done
 doc lint report: $(SUBDIRS)
-	-for dirX in $^ ; do $(MAKE) -C $$dirX OPTS="$(OPTS)" $@ ; done
-run debug valgrind: intromain
-	-$(MAKE) -C intromain ARGS="$(ARGS)" $@
+	-for dirX in $^ ; do ninja -C $$dirX $@ ; done
+run debug valgring: intromain
+	-ninja -C intromain $@

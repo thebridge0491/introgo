@@ -24,6 +24,11 @@ cd $GOPATH/src/<path> ; [sh] ./configure.sh [--prefix=$PREFIX] [--help]
 
 [PKG_CONFIG_PATH=$PREFIX/lib/pkgconfig] [sudo] rake install [test]
 
+build example with ninja:
+cd $GOPATH/src/<path> ; [sh] ./configure.sh [--prefix=$PREFIX] [--help]
+
+[PKG_CONFIG_PATH=$PREFIX/lib/pkgconfig] [sudo] ninja install [test]
+
 build example with make:
 cd $GOPATH/src/<path> ; [sh] ./configure.sh [--prefix=$PREFIX] [--help]
 

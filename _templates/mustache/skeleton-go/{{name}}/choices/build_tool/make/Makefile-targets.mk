@@ -4,8 +4,13 @@
 # $* - basename (cur target)  $^ - name(s) (all depns)  $< - name (1st depn)
 # $@ - name (cur target)      $% - archive member name  $? - changed depns
 
-FMTS ?= tar.gz
+FMTS ?= tar.gz,zip
 distdir = $(parent)-$(pkg).$(version)
+
+build/$(distdir) : 
+	-@mkdir -p build/$(distdir) ; cp -f exclude.lst build/
+#	#-zip -9 -q --exclude @exclude.lst -r - . | unzip -od build/$(distdir) -
+	-tar --format=posix --dereference --exclude-from=exclude.lst -cf - . | tar -xpf - -C build/$(distdir)
 
 .PHONY: help clean test uninstall install dist doc lint report
 help: ## help
@@ -33,22 +38,24 @@ uninstall install: ## [un]install artifacts [OPTS=""]
 	-for pkgX in `go list .../$(pkg)` ; do \
 		if [ "uninstall" = "$@" ] ; then \
 			go clean -i $(OPTS) $$pkgX ; \
-		else PKG_CONFIG_PATH=$(PREFIX)/lib/pkgconfig go install $(OPTS) $$pkgX ; fi \
+		else \
+			PKG_CONFIG_PATH=$(PREFIX)/lib/pkgconfig go install $(OPTS) $$pkgX ; \
+			go list -e $$pkgX ; \
+		fi \
 	done
-dist: ## [FMTS="tar.gz"] archive source code
-	-@mkdir -p build/$(distdir) ; cp -f exclude.lst build/
-#	#-zip -9 -q --exclude @exclude.lst -r - . | unzip -od build/$(distdir) -
-	-tar --format=posix --dereference --exclude-from=exclude.lst -cf - . | tar -xpf - -C build/$(distdir)
-	
+dist: ## [FMTS="tar.gz,zip"] archive source code
 	-@for fmt in `echo $(FMTS) | tr ',' ' '` ; do \
 		case $$fmt in \
+			7z) echo "### build/$(distdir).7z ###" ; \
+				rm -f build/$(distdir).7z ; \
+				(cd build ; 7za a -t7z -mx=9 $(distdir).7z $(distdir)) ;; \
 			zip) echo "### build/$(distdir).zip ###" ; \
 				rm -f build/$(distdir).zip ; \
 				(cd build ; zip -9 -q -r $(distdir).zip $(distdir)) ;; \
-			*) tarext=`echo $$fmt | grep -e '^tar$$' -e '^tar.xz$$' -e '^tar.bz2$$' || echo tar.gz` ; \
+			*) tarext=`echo $$fmt | grep -e '^tar$$' -e '^tar.xz$$' -e '^tar.zst$$' -e '^tar.bz2$$' || echo tar.gz` ; \
 				echo "### build/$(distdir).$$tarext ###" ; \
 				rm -f build/$(distdir).$$tarext ; \
-				(cd build ; tar --posix -L -caf $(distdir).$$tarext $(distdir)) ;; \
+				(cd build ; tar --posix -h -caf $(distdir).$$tarext $(distdir)) ;; \
 		esac \
 	done
 	-@rm -r build/$(distdir)
